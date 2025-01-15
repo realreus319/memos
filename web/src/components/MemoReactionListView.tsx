@@ -1,10 +1,11 @@
 import { uniq } from "lodash-es";
 import { memo, useEffect, useState } from "react";
 import useCurrentUser from "@/hooks/useCurrentUser";
-import { extractUsernameFromName, useUserStore } from "@/store/v1";
-import { Memo } from "@/types/proto/api/v2/memo_service";
-import { Reaction, Reaction_Type } from "@/types/proto/api/v2/reaction_service";
-import { User } from "@/types/proto/api/v2/user_service";
+import { useUserStore } from "@/store/v1";
+import { State } from "@/types/proto/api/v1/common";
+import { Memo } from "@/types/proto/api/v1/memo_service";
+import { Reaction } from "@/types/proto/api/v1/reaction_service";
+import { User } from "@/types/proto/api/v1/user_service";
 import ReactionSelector from "./ReactionSelector";
 import ReactionView from "./ReactionView";
 
@@ -17,13 +18,14 @@ const MemoReactionListView = (props: Props) => {
   const { memo, reactions } = props;
   const currentUser = useCurrentUser();
   const userStore = useUserStore();
-  const [reactionGroup, setReactionGroup] = useState<Map<Reaction_Type, User[]>>(new Map());
+  const [reactionGroup, setReactionGroup] = useState<Map<string, User[]>>(new Map());
+  const readonly = memo.state === State.ARCHIVED;
 
   useEffect(() => {
     (async () => {
-      const reactionGroup = new Map<Reaction_Type, User[]>();
+      const reactionGroup = new Map<string, User[]>();
       for (const reaction of reactions) {
-        const user = await userStore.getOrFetchUserByUsername(extractUsernameFromName(reaction.creator));
+        const user = await userStore.getOrFetchUserByName(reaction.creator);
         const users = reactionGroup.get(reaction.reactionType) || [];
         users.push(user);
         reactionGroup.set(reaction.reactionType, uniq(users));
@@ -38,7 +40,7 @@ const MemoReactionListView = (props: Props) => {
         {Array.from(reactionGroup).map(([reactionType, users]) => {
           return <ReactionView key={`${reactionType.toString()} ${users.length}`} memo={memo} reactionType={reactionType} users={users} />;
         })}
-        {currentUser && <ReactionSelector memo={memo} />}
+        {!readonly && currentUser && <ReactionSelector memo={memo} />}
       </div>
     )
   );

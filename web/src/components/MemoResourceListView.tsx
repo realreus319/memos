@@ -1,6 +1,5 @@
 import { memo } from "react";
-import { absolutifyLink } from "@/helpers/utils";
-import { Resource } from "@/types/proto/api/v2/resource_service";
+import { Resource } from "@/types/proto/api/v1/resource_service";
 import { getResourceType, getResourceUrl } from "@/utils/resource";
 import MemoResource from "./MemoResource";
 import showPreviewImageDialog from "./PreviewImageDialog";
@@ -28,16 +27,16 @@ const MemoResourceListView = ({ resources = [] }: { resources: Resource[] }) => 
     showPreviewImageDialog(imgUrls, index);
   };
 
-  const MediaCard = ({ resource, thumbnail }: { resource: Resource; thumbnail?: boolean }) => {
+  const MediaCard = ({ resource }: { resource: Resource }) => {
     const type = getResourceType(resource);
-    const url = getResourceUrl(resource);
+    const resourceUrl = getResourceUrl(resource);
 
     if (type === "image/*") {
       return (
         <img
           className="cursor-pointer min-h-full w-auto object-cover"
-          src={resource.externalLink ? url : `${url}${thumbnail ? "?thumbnail=1" : ""}`}
-          onClick={() => handleImageClick(url)}
+          src={resource.externalLink ? resourceUrl : resourceUrl + "?thumbnail=true"}
+          onClick={() => handleImageClick(resourceUrl)}
           decoding="async"
           loading="lazy"
         />
@@ -48,7 +47,7 @@ const MemoResourceListView = ({ resources = [] }: { resources: Resource[] }) => 
           className="cursor-pointer w-full h-full object-contain bg-zinc-100 dark:bg-zinc-800"
           preload="metadata"
           crossOrigin="anonymous"
-          src={absolutifyLink(url)}
+          src={resourceUrl}
           controls
         />
       );
@@ -70,10 +69,10 @@ const MemoResourceListView = ({ resources = [] }: { resources: Resource[] }) => 
 
     const cards = resources.map((resource) => (
       <SquareDiv
-        key={resource.id}
+        key={resource.name}
         className="flex justify-center items-center border dark:border-zinc-900 rounded overflow-hidden hide-scrollbar hover:shadow-md"
       >
-        <MediaCard resource={resource} thumbnail />
+        <MediaCard resource={resource} />
       </SquareDiv>
     ));
 
@@ -90,7 +89,7 @@ const MemoResourceListView = ({ resources = [] }: { resources: Resource[] }) => 
     return (
       <div className="w-full flex flex-row justify-start flex-wrap gap-2">
         {otherResources.map((resource) => (
-          <MemoResource key={resource.id} resource={resource} />
+          <MemoResource key={resource.name} resource={resource} />
         ))}
       </div>
     );
